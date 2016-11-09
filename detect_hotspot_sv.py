@@ -27,67 +27,11 @@ def filter_vcf(vcf_reader,hotspotDict):
 			chrom2 = record.INFO['CHR2']
 			
 		hotspotTag = chl.CheckIfItIsHotspot(chrom1, start1, chrom2, start2, hotspotDict)
-		if(hotspotTag)
+		if(hotspotTag):
 			yield record
 		else:
 			continue
 
-
-
-'''Find hotspot sv
-
-Counts the number of events that aren't in exons, "in frame" or "out of frame",
-and returns the genes with more at least ``threshold`` of these events.
-Adapted from check_cDNA_contamination.py by Ronak Shah.
-
-Args:
-	dataDF (pandas.DataFrame): Output of iAnnotateSV
-	THRESHOLD (int): Threshold number of qualifying events
-
-Returns:
-	List of pseudogenes
-'''
-def find_pseudogenes(dataDF, THRESHOLD):
-	# Group the data by gene1 name
-	gDF = dataDF.groupby('gene1').groups
-	
-	geneList = []
-	# traverse through gDF dictionary 
-	for gene1, value in gDF.iteritems():
-		# check how many entries are there of sv type
-		entries = len(value)
-		# run only if the event is deletion and has more then 2 entries for the same gene
-		if entries >= THRESHOLD:
-			
-			# number of cDNA events
-			count = 0
-			for idx in value:
-
-				record = dataDF.loc[idx]
-				site1 = str(record.loc['site1'])
-				site2 = str(record.loc['site2'])
-				fusion = str(record.loc['fusion'])
-				gene2 = record.loc['gene2']
-				
-				# Skip entries that are:
-				# - within exon
-				# - in-frame or out-of-frame
-				# - involve IGRs.
-				# - involve multiple genes
-				if ("Exon" in site1 and "Exon" in site2) or \
-				   ("in frame" in fusion or "out of frame" in fusion) or \
-				   ('IGR' in site1 or 'IGR' in site2) or \
-				   (gene1 != gene2):
-					continue
-				
-				else:
-					count += 1
-
-			# count the entries,genes and fill the 
-			if count >= THRESHOLD:
-				geneList.append(gene1)
-
-	return geneList
 
 
 '''Main method
