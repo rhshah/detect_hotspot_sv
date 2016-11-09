@@ -5,8 +5,10 @@ import subprocess
 import vcf, vcf.model
 import pandas as pd
 from iCallSV.dellyVcf2Tab import vcf2tab
+import iCallSV.checkHotSpotList as chl
+import iCallSV.mergeFinalFiles as mff
 
-'''Filter a VCF for PRECISE deletions with PE > 10
+'''Filter a VCF for Hotspot Events
 
 Args:
 	vcf_reader: vcf.Reader object
@@ -15,16 +17,24 @@ Yields:
 	vcf._Record: the calls that pass filter
 
 '''
-def filter_vcf(vcf_reader):
+def filter_vcf(vcf_reader,hotspotDict):
 	for record in vcf_reader:
-		# assert type(record) == vcf.model._Record
-
-		info = record.INFO
-
-		if (info['SVTYPE'] == 'DEL') and ('PRECISE' in info) and (info['PE'] > 10):
+		chrom1 = reader.CHROM
+		start1 = reader.POS
+		if("END" in record.INFO):
+			start2 = record.INFO['END']
+		if("CHR2" in record.INFO):
+			chrom2 = record.INFO['CHR2']
+			
+		hotspotTag = chl.CheckIfItIsHotspot(chrom1, start1, chrom2, start2, hotspotDict)
+		if(hotspotTag)
 			yield record
+		else:
+			continue
 
-'''Find pseudogenes herustically.
+
+
+'''Find hotspot sv
 
 Counts the number of events that aren't in exons, "in frame" or "out of frame",
 and returns the genes with more at least ``threshold`` of these events.
@@ -110,8 +120,13 @@ def main(command=None):
 		action='store',
 		metavar='n',
 		type=int,
-		help='Output pseudogenes must have at least this many qualifying deletion events. [default: 2]',
+		help='Output must have at least this many qualifying PE support. [default: 1]',
 		default=2
+	)
+	parser.add_argument('-hsl', '--hotspotFile',
+		action='store',
+		metavar='hotspot_list',
+		help='path to list of hotspots',
 	)
 	parser.add_argument('--iAnnotateSV', 
 		action='store', 
@@ -150,15 +165,28 @@ def main(command=None):
 	print 'Filtering vcf...'
 
 	filtered_vcf = os.path.join(scratch_dir, PREFIX + '.filtered.vcf')
-
+	hotspotDict = chl.ReadHotSpotFile(args.hotspotFile)
 	with open(IN_VCF, 'rU') as vcf_in_fp, open(filtered_vcf, 'w') as filtered_vcf_fp:
 		reader = vcf.Reader(vcf_in_fp)
+		
 		writer = vcf.Writer(filtered_vcf_fp, template=reader)
 
-		for record in filter_vcf(reader):
+		for record in filter_vcf(reader,hotspotDict):
 			writer.write_record(record)
-
-
+	
+	vcf_reader = vcf.Reader(vcf_in_fp)
+	samples = vcf_reader.samples
+    pattern = re.compile(PREFIX)
+    # Get the case and control id
+    caseIDinVcf = None
+    controlIDinVcf = None
+    for sample in samples:
+        match = re.search(pattern, sample)
+        if(match):
+            caseIDinVcf = sample
+        else:
+            controlIDinVcf = sample
+            
 	# 2: Convert to tab delimited
 	print 'Converting to tab delimited...'
 	vcf2tab(filtered_vcf, scratch_dir, verbose=False)
@@ -176,25 +204,15 @@ def main(command=None):
 		)
 	print annotate_command
 	subprocess.check_call(shlex.split(annotate_command))
+	
 
-
-	# 4: find pseudogenes
-	print 'Looking for pseudogenes...'
-
-	# The file that iAnnotateSV created that we want
+	# 4: Merge VCF and Annotations
+	print 'Merging hotspot structural variants...'
 	annotations_file = os.path.join(scratch_dir, PREFIX + '_Annotated.txt')
+	out_file_prefix = PREFIX + '.hotspot_sv'
+	out_file = mff.run(caseIDinVcf,controlIDinVcf,filtered_vcf,annotations_file,"None",WD,out_file_prefix,True)
 
-	annotations_df = pd.read_table(annotations_file)
-	pseudogenes = find_pseudogenes(annotations_df, THRESHOLD=THRESHOLD)
-	pseudogenes.sort() # A to Z
-
-	out_file = PREFIX + '.pseudogenes.txt'
-
-	with open(out_file, 'w') as out_fp:
-		for gene in pseudogenes:
-			out_fp.write('%s\t%s\n' % (PREFIX, gene))
-
-
+	print 'Final File written:', WD + "/" + out_file
 	print 'Done!'
 
 
