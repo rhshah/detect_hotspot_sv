@@ -128,7 +128,7 @@ def main(command=None):
 	# Get the case and control id
 	caseIDinVcf = None
 	controlIDinVcf = None
-    for sample in samples:
+	for sample in samples:
     	match = re.search(pattern, sample)
     	if(match):
     		caseIDinVcf = sample
