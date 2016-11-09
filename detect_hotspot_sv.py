@@ -1,8 +1,9 @@
 import os
 import argparse
 import shlex
+import re
 import subprocess
-import vcf, vcf.model
+import vcf
 import pandas as pd
 from iCallSV.dellyVcf2Tab import vcf2tab
 import iCallSV.checkHotSpotList as chl
@@ -17,7 +18,9 @@ Yields:
 	vcf._Record: the calls that pass filter
 
 '''
-def filter_vcf(vcf_reader,hotspotDict):
+
+
+def filter_vcf(vcf_reader, hotspotDict):
 	for record in vcf_reader:
 		chrom1 = reader.CHROM
 		start1 = reader.POS
@@ -25,7 +28,7 @@ def filter_vcf(vcf_reader,hotspotDict):
 			start2 = record.INFO['END']
 		if("CHR2" in record.INFO):
 			chrom2 = record.INFO['CHR2']
-			
+
 		hotspotTag = chl.CheckIfItIsHotspot(chrom1, start1, chrom2, start2, hotspotDict)
 		if(hotspotTag):
 			yield record
@@ -33,24 +36,25 @@ def filter_vcf(vcf_reader,hotspotDict):
 			continue
 
 
-
 '''Main method
 
 Passing a string will parse command line args from the string instead of stdin
 '''
+
+
 def main(command=None):
-	
+
 	# 0: Parse aand interpret args
 
 	parser = argparse.ArgumentParser()
 	# Required args
-	parser.add_argument('in_vcf', 
-		action='store', 
+	parser.add_argument('in_vcf',
+		action='store',
 		metavar='structural_variants.vcf',
 		help='VCF with deletion event calls'
 	)
-	parser.add_argument('wd', 
-		action='store', 
+	parser.add_argument('wd',
+		action='store',
 		metavar='/path/to/output_directory/',
 		help='Directory to put output in'
 	)
@@ -72,8 +76,8 @@ def main(command=None):
 		metavar='hotspot_list',
 		help='path to list of hotspots',
 	)
-	parser.add_argument('--iAnnotateSV', 
-		action='store', 
+	parser.add_argument('--iAnnotateSV',
+		action='store',
 		metavar='iAnnotateSV.py',
 		default='/home/shahr2/git/iAnnotateSV/iAnnotateSV/iAnnotateSV.py',
 		help='''path to iAnnotateSV.py script
@@ -85,7 +89,7 @@ def main(command=None):
 		choices=['hg18', 'hg19', 'hg38'],
 		help='Reference genome version to use during annotation [default: hg19]'
 	)
-	
+
 	args = parser.parse_args(command.split()) if command else parser.parse_args()
 
 	WD = args.wd
@@ -97,11 +101,11 @@ def main(command=None):
 	scratch_dir = 'scratch/'
 
 	os.chdir(WD)
-	
+
 	try:
 		os.mkdir(scratch_dir)
 	except OSError:
-		pass # Assume directory exists already
+		pass  # Assume directory exists already
 
 	#############################################################################
 
@@ -112,12 +116,12 @@ def main(command=None):
 	hotspotDict = chl.ReadHotSpotFile(args.hotspotFile)
 	with open(IN_VCF, 'rU') as vcf_in_fp, open(filtered_vcf, 'w') as filtered_vcf_fp:
 		reader = vcf.Reader(vcf_in_fp)
-		
+
 		writer = vcf.Writer(filtered_vcf_fp, template=reader)
 
-		for record in filter_vcf(reader,hotspotDict):
+		for record in filter_vcf(reader, hotspotDict):
 			writer.write_record(record)
-	
+
 	vcf_reader = vcf.Reader(vcf_in_fp)
 	samples = vcf_reader.samples
     pattern = re.compile(PREFIX)
