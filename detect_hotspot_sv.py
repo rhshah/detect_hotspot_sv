@@ -129,11 +129,11 @@ def main(command=None):
 	caseIDinVcf = None
 	controlIDinVcf = None
 	for sample in samples:
-    	match = re.search(pattern, sample)
-    	if(match):
-    		caseIDinVcf = sample
-    	else:
-    		controlIDinVcf = sample
+		match = re.search(pattern, sample)
+		if(match):
+			caseIDinVcf = sample
+		else:
+			controlIDinVcf = sample
             
 	# 2: Convert to tab delimited
 	print 'Converting to tab delimited...'
