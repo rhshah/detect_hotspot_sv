@@ -101,6 +101,15 @@ def main(command=None):
                         choices=['hg18', 'hg19', 'hg38'],
                         help='Reference genome version to use during annotation [default: hg19]'
                         )
+    parser.add_argument(
+        "-P",
+        "--python",
+        action="store",
+        dest="python",
+        required=False,
+        default='/dmp/resources/prod/tools/system/python/production/bin/python',
+        metavar='/somepath/python',
+        help="Full path Pyhton executables.")
 
     args = parser.parse_args(command.split()) if command else parser.parse_args()
 
@@ -153,7 +162,8 @@ def main(command=None):
     # 3: Annotate
     print 'Annotating...'
 
-    annotate_command = 'python {iAnnotateSV} -r {genome} -ofp {prefix} -o {wd} -i {tab_file} -d 3000'.format(
+    annotate_command = '{python} {iAnnotateSV} -r {genome} -ofp {prefix} -o {wd} -i {tab_file} -d 3000'.format(
+        python=args.python,
         iAnnotateSV=iAnnotateSV,
         genome=REF_GENOME,
         prefix=PREFIX,
