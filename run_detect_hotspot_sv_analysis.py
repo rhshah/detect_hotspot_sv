@@ -1,8 +1,8 @@
 """
-run_processed-psuedogene_analysis
+run_detect_hotspot_sv_analysis
 ~~~~~~~~~~~~~~~~
 
-:Description: run_processed-psuedogene_analysis is a wrapper to run the processed-psuedogene on MSKCC data
+:Description: run_detect_hotspot_sv_analysis is a wrapper to run the pdetect_hotspot_sv on MSKCC data
 :author:     Ronak H Shah
 :copyright:  (c) 2015-2016 by Ronak H Shah for Memorial Sloan Kettering Cancer Center. All rights reserved.
 :license:    Apache License 2.0
@@ -28,8 +28,8 @@ from gridmap import Job, process_jobs
 def main():
 
     parser = argparse.ArgumentParser(
-        prog='run_processed-psuedogene_analysis.py',
-        description='Run processed-psuedogene_analysis on selected pools/samples using MSK data',
+        prog='run_detect_hotspot_sv_analysis.py',
+        description='Run detect_hotspot_sv on selected pools/samples using MSK data',
         usage='%(prog)s [options]')
     parser.add_argument(
         "-mif",
