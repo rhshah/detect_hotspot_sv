@@ -126,16 +126,15 @@ def main(command=None):
 
     filtered_vcf = os.path.join(scratch_dir, PREFIX + '.filtered.vcf')
     hotspotDict = chl.ReadHotSpotFile(args.hotspotFile)
+    samples = None
     with open(IN_VCF, 'rU') as vcf_in_fp, open(filtered_vcf, 'w') as filtered_vcf_fp:
         reader = vcf.Reader(vcf_in_fp)
-
+		samples = vcf_Reader.samples
         writer = vcf.Writer(filtered_vcf_fp, template=reader)
 
         for record in filter_vcf(reader, hotspotDict):
             writer.write_record(record)
 
-    vcf_reader = vcf.Reader(vcf_in_fp)
-    samples = vcf_reader.samples
     pattern = re.compile(PREFIX)
     # Get the case and control id
     caseIDinVcf = None
