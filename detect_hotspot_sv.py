@@ -23,8 +23,8 @@ Yields:
 
 def filter_vcf(vcf_reader, hotspotDict):
     for record in vcf_reader:
-        chrom1 = reader.CHROM
-        start1 = reader.POS
+        chrom1 = record.CHROM
+        start1 = record.POS
         if("END" in record.INFO):
             start2 = record.INFO['END']
         if("CHR2" in record.INFO):
