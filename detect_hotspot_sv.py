@@ -144,7 +144,7 @@ def main(command=None):
         for record in filter_vcf(reader, hotspotDict):
             writer.write_record(record)
 
-    (pprefix,psufix) = PREFIX.split("_")
+    pprefix = PREFIX.split("_",1)[0]
     pattern = re.compile(pprefix)
     # Get the case and control id
     caseIDinVcf = None
