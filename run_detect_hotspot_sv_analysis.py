@@ -26,7 +26,7 @@ from gridmap import Job, process_jobs
 
 
 def main():
-    
+
     parser = argparse.ArgumentParser(
         prog='run_processed-psuedogene_analysis.py',
         description='Run processed-psuedogene_analysis on selected pools/samples using MSK data',
@@ -57,13 +57,13 @@ def main():
         metavar='/somepath/python',
         help="Full path Pyhton executables.")
     parser.add_argument(
-        "-ppg",
-        "--processpsuedogene",
+        "-dhs",
+        "--detecthotspotsv",
         action="store",
-        dest="ppg",
+        dest="dhs",
         required=True,
-        metavar='/somepath/process-pusedogene.py',
-        help="Full path processed_psuedogene.py executables.")
+        metavar='/somepath/detect_hotspot_sv.py',
+        help="Full path detect_hotspot_sv.py executables.")
     parser.add_argument(
         "-ias",
         "--iAnnotateSV",
@@ -72,6 +72,21 @@ def main():
         required=True,
         metavar='/somepath/iAnnotateSV.py',
         help="Full path iAnnotate.py executables.")
+    parser.add_argument('-hsl', '--hotspotFile',
+                        action='store',
+                        metavar='hotspot_list',
+                        help='path to list of hotspots',
+                        )
+    parser.add_argument('-bl', '--blackListGenes',
+                        action='store',
+                        metavar='black_list',
+                        help='path to list of black list genes File',
+                        )
+    parser.add_argument('-kgl', '--genesToKeep',
+                        action='store',
+                        metavar='keep_genes',
+                        help='path to list of genes to keep file',
+                        )
     parser.add_argument(
         "-q",
         "--queue",
@@ -98,7 +113,7 @@ def main():
         required=False,
         default='5',
         metavar='5',
-        help="Number of Threads to be used to run processed-psuedogene analysis on")
+        help="Number of Threads to be used to run detect_hotspot_sv analysis on")
     parser.add_argument(
         "-v",
         "--verbose",
@@ -116,13 +131,13 @@ def main():
 
     args = parser.parse_args()
     if(args.verbose):
-        print "Starting the Process to Run processed-psuedogene."
-    
-    metaInfoDF = pd.read_table(args.mif,sep="\t")
-    for index,rows in metaInfoDF.iterrows():
+        print "Starting the Process to Run detect_hotspot_sv."
+
+    metaInfoDF = pd.read_table(args.mif, sep="\t")
+    for index, rows in metaInfoDF.iterrows():
         poolName = rows.loc['Run']
         id = rows.loc['LIMS_ID']
-        delvcf = SetupRun(poolName, id,args)
+        (delvcf,dupvcf,invvcf,jmpvcf) = SetupRun(poolName, id, args)
         pooldir = args.outdir + "/" + poolName
         if(os.path.isdir(pooldir)):
             if(args.verbose):
@@ -137,14 +152,17 @@ def main():
         else:
             os.mkdir(sampledir)
             os.chmod(sampledir, 0o755)
-        RunPerPool(delvcf, id, sampledir,index,args)
+        RunPerPool(delvcf, id, sampledir, index, args)
+        RunPerPool(dupvcf, id, sampledir, index, args)
+        RunPerPool(invvcf, id, sampledir, index, args)
+        RunPerPool(jmpvcf, id, sampledir, index, args)
     if(args.verbose):
-        print "Finished the Process to Run processed-psuedogene."
+        print "Finished the Process to Run detect_hotspot_sv."
 
 
 def SetupRun(poolName, id, args):
-    """This will setup the run to be analyzed.
-
+    """
+    This will setup the run to be analyzed.
 
     :param str poolName: str of pool to be analyzed
     :param str id: str of sample ID to be analyzed
@@ -166,24 +184,24 @@ def SetupRun(poolName, id, args):
         if(os.path.isdir(sv_dir)):
             if(args.verbose):
                 print "\tSV Location:", sv_dir, "\n"
-            delFile = glob.glob(os.path.join(sv_dir , id + "*/*del.vcf"))
+            delFile = glob.glob(os.path.join(sv_dir, id + "*/*del.vcf"))
             delFile = delFile[0]
-            dupFile = glob.glob(os.path.join(sv_dir , id + "*/*dup.vcf"))
+            dupFile = glob.glob(os.path.join(sv_dir, id + "*/*dup.vcf"))
             dupFile = dupFile[0]
-            invFile = glob.glob(os.path.join(sv_dir , id + "*/*inv.vcf"))
+            invFile = glob.glob(os.path.join(sv_dir, id + "*/*inv.vcf"))
             invFile = invFile[0]
-            jmpFile = glob.glob(os.path.join(sv_dir , id + "*/*jmp.vcf"))
-            jmpFile = jmpFile[0]   
+            jmpFile = glob.glob(os.path.join(sv_dir, id + "*/*jmp.vcf"))
+            jmpFile = jmpFile[0]
     else:
         if(args.verbose):
             print "\tQC LOCATION", qclocation, " DOES NOT EXISTS!!!, Please Review you qcLocation INPUT\n"
-    
-    return(delFile)
+
+    return(delFile,dupFile,invFile,jmpFile)
 
 
-def RunPerPool(vcfFile,id,sampledir,count,args):
-    """This will run the pool to be analyzed.
-
+def RunPerPool(vcfFile, id, sampledir, count, args):
+    """
+    This will run the pool to be analyzed.
 
     :param str vcfFile: str of vcf file name
     :param str id: str of sample id
@@ -194,9 +212,10 @@ def RunPerPool(vcfFile,id,sampledir,count,args):
     """
     jobs = []
     if(os.path.isfile(vcfFile)):
-        jobId = "run_ppg_" + str(count) + "_" + str(id)
+        jobId = "run_dhs_" + str(count) + "_" + str(id)
         cmdList = []
-        cmd = args.python + " " + args.ppg + " " + vcfFile + " " + sampledir + " -s " + id + " --iAnnotateSV " + args.ias + " --genome hg19"
+        cmd = args.python + " " + args.dhs + " " + vcfFile + " " + sampledir + \
+            " -s " + id + " --iAnnotateSV " + args.ias + " --genome hg19" + " --hsl" + args.hotspotFile + " --bl" + args.blackListGenes + " --kgl" + args.genesToKeep
         # cmd = str(cmd)
         threads = int(args.threads)
         threads = threads + 1
@@ -233,8 +252,8 @@ def RunPerPool(vcfFile,id,sampledir,count,args):
 
 
 def RunJob(cmd):
-    """Given a command run the job.
-
+    """
+    Given a command run the job.
 
     :param str cmd: str of command to be run on the local machine
     :return: None
@@ -265,11 +284,9 @@ def RunJob(cmd):
 '''
 
 
-
 def getSubDirs(dirLocation):
     """
     Get all sub directories.
-
 
     :param str dirLocation: str of directory location
     :return: list of all sub directories
@@ -284,8 +301,8 @@ def getSubDirs(dirLocation):
 
 
 def processor(i, jobqueue):
-    """Operate on a jobqueue.
-
+    """
+    Operate on a jobqueue.
 
     :param int i: count of the job
     :param Namespace jobqueue: Namespace for jobqueue

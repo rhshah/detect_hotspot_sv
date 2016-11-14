@@ -9,7 +9,7 @@ import pandas as pd
 from iCallSV.dellyVcf2Tab import vcf2tab
 from iCallSV import checkHotSpotList as chl
 from iCallSV import mergeFinalFiles as mff
-
+from iCallSV import filterAnnotatedSV as fas
 '''Filter a VCF for Hotspot Events
 
 Args:
@@ -77,6 +77,16 @@ def main(command=None):
                         action='store',
                         metavar='hotspot_list',
                         help='path to list of hotspots',
+                        )
+    parser.add_argument('-bl', '--blackListGenes',
+                        action='store',
+                        metavar='black_list',
+                        help='path to list of black list genes File',
+                        )
+    parser.add_argument('-kgl', '--genesToKeep',
+                        action='store',
+                        metavar='keep_genes',
+                        help='path to list of genes to keep file',
                         )
     parser.add_argument('--iAnnotateSV',
                         action='store',
@@ -167,6 +177,17 @@ def main(command=None):
         WD,
         out_file_prefix,
         True)
+
+    # 4: Filter Annotated Txt
+    out_file_prefix = PREFIX + '.hotspot_sv'
+    print 'Filtering hotspot structural variants...'
+    out_file = fas.run(
+        out_file,
+        WD,
+        out_file_prefix,
+        args.blackListGenes,
+        True,
+        args.genesToKeep)
 
     print 'Final File written:', WD + "/" + out_file
     print 'Done!'

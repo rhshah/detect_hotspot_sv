@@ -7,11 +7,11 @@ Some code adapted from [Ronak Shah's check_cDNA_contamination.py](https://github
 
 ### Usage:
 ```
-usage: python detect_hotspot_sv.py [-h] [-s sample_name] [-t n]
-                                [--iAnnotateSV iAnnotateSV.py]
-                                [--genome {hg18,hg19,hg38}]
-                                structural_variants.vcf
-                                /path/to/output_directory/
+usage: detect_hotspot_sv.py [-h] [-s sample_name] [-t n] [-hsl hotspot_list]
+                            [-bl black_list] [-kgl keep_genes]
+                            [--iAnnotateSV iAnnotateSV.py]
+                            [--genome {hg18,hg19,hg38}]
+                            structural_variants.vcf /path/to/output_directory/
 
 positional arguments:
   structural_variants.vcf
@@ -23,25 +23,32 @@ optional arguments:
   -h, --help            show this help message and exit
   -s sample_name, --sample-name sample_name
                         Prefix [default: filename of in_vcf]
-  -t n, --threshold n   Output pseudogenes must have at least this many
-                        qualifying deletion events. [default: 2]
+  -t n, --threshold n   Output must have at least this many qualifying PE
+                        support. [default: 1]
+  -hsl hotspot_list, --hotspotFile hotspot_list
+                        path to list of hotspots
+  -bl black_list, --blackListGenes black_list
+                        path to list of black list genes File
+  -kgl keep_genes, --genesToKeep keep_genes
+                        path to list of genes to keep file
   --iAnnotateSV iAnnotateSV.py
                         path to iAnnotateSV.py script [default: /home/shahr2/g
                         it/iAnnotateSV/iAnnotateSV/iAnnotateSV.py]
   --genome {hg18,hg19,hg38}
                         Reference genome version to use during annotation
                         [default: hg19]
+					
 ```
 
 
 ### Example usage:
 ```
-$ python detect_hotspot_sv.py example.vcf ./ -s my_sample
+$ python detect_hotspot_sv.py example.vcf ./ -s my_sample -hsl /path/to/hotspotlist -kgl /path/to/geneToKeep -bl /path/to/blacklist
 ```
 
 
 ### Output:
-- `<output directory>/<sample name>.hotspot_sv.txt`: a one-line, tab-delimited list of sample name and its processed pseudogenes
+- `<output directory>/<sample name>.hotspot_sv_final.txt`: a one-line, tab-delimited list of sample name and its structural variants
 - Intermediate files in `<output directory>/scratch/`
 
 
@@ -55,10 +62,12 @@ $ python detect_hotspot_sv.py example.vcf ./ -s my_sample
 
 ## Script process
 
-1. Filter the input VCF for PRECISE deletions with paired read count > 10
+1. Filter the input VCF for any events occuring i defined hotspots
 2. Convert the filtered VCF to tab-delimited input format for iAnnotateSV, using iCallSV.dellyVcf2Tab
 3. Annotate using iAnnotateSV
-4. For each gene, count the number of events that aren't in exons, "in frame" or "out of frame".If a gene has more than the threshold number of events, then conclude it's a processed pseudogene.
+4. Merge Annotation with VCF with iCallSV.mergeFinalFiles
+5. Filter merged files with iCallSV.fiterAnnotatedSV
+
 
 # run_detect_hotspot_sv_analysis.py 
 
@@ -93,11 +102,17 @@ optional arguments:
   -v, --verbose         make lots of noise [default]
   -o /somepath/output, --outDir /somepath/output
                         Full Path to the output dir.
+  -hsl hotspot_list, --hotspotFile hotspot_list
+                        path to list of hotspots
+  -bl black_list, --blackListGenes black_list
+                        path to list of black list genes File
+  -kgl keep_genes, --genesToKeep keep_genes
+                        path to list of genes to keep file
 ```
 
 ### Example usage:
 ```
-$ python run_detect_hotspot_sv_analysis.py  -mif /location/to/meatdata.txt -qc /dmp/qc/location/path -ppg /path/to/processed-pseudogenes/detect_hotspot_sv.py -ias /path/to/iAnnotateSV.py -q sge_queue_name -qsub path/to/qsub -t 1 -o /path/to/output/directory -v 
+$ python run_detect_hotspot_sv_analysis.py  -mif /location/to/meatdata.txt -qc /dmp/qc/location/path -dhs /path/to/detect_hotspot_sv.py -ias /path/to/iAnnotateSV.py -q sge_queue_name -qsub path/to/qsub -t 1 -o /path/to/output/directory -v -hsl /path/to/hotspotlist -kgl /path/to/geneToKeep -bl /path/to/blacklist
 ```
 
 ### Meta information file format
