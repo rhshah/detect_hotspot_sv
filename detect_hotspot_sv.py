@@ -129,7 +129,7 @@ def main(command=None):
     samples = None
     with open(IN_VCF, 'rU') as vcf_in_fp, open(filtered_vcf, 'w') as filtered_vcf_fp:
         reader = vcf.Reader(vcf_in_fp)
-		samples = vcf_Reader.samples
+        samples = vcf_Reader.samples
         writer = vcf.Writer(filtered_vcf_fp, template=reader)
 
         for record in filter_vcf(reader, hotspotDict):
