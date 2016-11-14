@@ -215,7 +215,7 @@ def RunPerPool(vcfFile, id, sampledir, count, args):
         jobId = "run_dhs_" + str(count) + "_" + str(id)
         cmdList = []
         cmd = args.python + " " + args.dhs + " " + vcfFile + " " + sampledir + \
-        " --iAnnotateSV " + args.ias + " --genome hg19" + " --hsl " + args.hotspotFile + " --bl " + args.blackListGenes + " --kgl " + args.genesToKeep
+        " --iAnnotateSV " + args.ias + " --genome hg19" + " -hsl " + args.hotspotFile + " -bl " + args.blackListGenes + " -kgl " + args.genesToKeep
         # cmd = str(cmd)
         threads = int(args.threads)
         threads = threads + 1
